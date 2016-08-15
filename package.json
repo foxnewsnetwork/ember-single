@@ -44,7 +44,10 @@
     "ember-addon"
   ],
   "dependencies": {
-    "ember-cli-babel": "^5.1.6"
+    "ember-cli-babel": "^5.1.6",
+    "fs-extra": "^0.30.0",
+    "inflection": "^1.10.0",
+    "lodash": "^4.15.0"
   },
   "ember-addon": {
     "configPath": "tests/dummy/config"
