@@ -1,3 +1,5 @@
+const isSingleton = true;
+
 export {
-  isSingleton: true
+  isSingleton
 };

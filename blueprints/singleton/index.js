@@ -32,6 +32,7 @@ module.exports = {
     var self = this;
     return this._processBlueprint(type, 'model', modelOptions)
     .then(this._processBlueprint.bind(this, type, 'service', serviceOptions))
+    .then(this._processBlueprint.bind(this, type, 'adapter', options))
     .then(function() {
       if (type === 'install') {
         return self.afterInstall(options);
@@ -64,7 +65,7 @@ module.exports = {
           ignoreMissing: true
         });
 
-        if (!testBlueprint) { return; }
+        if (!testBlueprint || options.dummy) { return; }
 
         if (testBlueprint.locals === Blueprint.prototype.locals) {
           testBlueprint.locals = function(options) {
@@ -99,6 +100,7 @@ module.exports = {
   afterInstall: function(options) {
     updateService.call(this, options);
     updateModel.call(this, options);
+    updateAdapter.call(this, options);
   }
 };
 
@@ -118,7 +120,16 @@ function updateModel(options) {
 
   var newMixin = addMixinToModel(source);
 
-  fs.writeFileSync(modelPath, newMixin); 
+  fs.writeFileSync(modelPath, newMixin);
+}
+
+function updateAdapter(options) {
+  var adapterPath = path.join.apply(null, findFile('adapter', options));
+  var source = fs.readFileSync(adapterPath, 'utf-8');
+
+  var newMixin = addMixinToAdapter(source);
+
+  fs.writeFileSync(adapterPath, newMixin);
 }
 
 function findFile(type, options) {
@@ -132,7 +143,7 @@ function findFile(type, options) {
     filePathParts = filePathParts.concat(['addon', options.entity.name, jsExt(type)]);
   } else if (options.project.isEmberCLIAddon() && !options.pod) {
     filePathParts = filePathParts.concat(['addon', pluralize(type), jsExt(options.entity.name)]);
-  } else if (options.pod) { 
+  } else if (options.pod) {
     filePathParts = filePathParts.concat(['app', options.entity.name, jsExt(type)]);
   } else {
     filePathParts = filePathParts.concat(['app', pluralize(type), jsExt(options.entity.name)]);
@@ -147,6 +158,16 @@ function pluralize(str) {
 
 function jsExt(file) {
   return file + '.js';
+}
+
+function addMixinToAdapter(oldContent) {
+  return oldContent.replace(
+    /^/,
+    'import { SingleAdapter } from \'ember-single\';\n'
+  ).replace(
+    'Adapter.extend(',
+    'Adapter.extend(SingleAdapter, '
+  );
 }
 
 function addMixinToService(oldContent) {
@@ -166,5 +187,5 @@ function addMixinToModel(oldContent) {
   ).replace(
     /\}\);\s*$/,
     '}).reopenClass(SingleModel);'
-  ); 
+  );
 }
